@@ -264,7 +264,7 @@ graph LR
 1. **Dial the Twilio number**: Call the configured Twilio phone number
 2. **Greeting**: You'll hear: "Hello, it's Serenity. I'm here to chat and help."
 3. **Free Trial**: First 5 minutes are free
-4. **Payment**: After 4:30, you'll be prompted to pay £6 for another hour
+4. **Payment**: After 4:30, you'll be prompted to pay £x for another hour
 5. **Continue**: Keep chatting as long as you like!
 
 ### 💡 Available Features
