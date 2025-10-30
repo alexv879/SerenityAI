@@ -1,46 +1,82 @@
-# SerenityAI - Elderly Voice Companion
+<div align="center">
+
+# 🎙️ SerenityAI - Elderly Voice Companion
 
 **AI-powered voice companion service designed specifically for elderly users in the UK**
 
-## Overview
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688.svg)](https://fastapi.tiangolo.com/)
+[![OpenAI Realtime](https://img.shields.io/badge/OpenAI-Realtime%20API-412991.svg)](https://platform.openai.com/)
+[![MCP](https://img.shields.io/badge/MCP-Model%20Context%20Protocol-orange.svg)](https://modelcontextprotocol.io/)
+[![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
+
+[![Twilio](https://img.shields.io/badge/Twilio-Voice%20API-F22F46.svg)](https://www.twilio.com/)
+[![Stripe](https://img.shields.io/badge/Stripe-Payments-008CDD.svg)](https://stripe.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-12+-316192.svg)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-6+-DC382D.svg)](https://redis.io/)
+
+[Features](#key-features) • [Tech Stack](#technology-stack) • [Installation](#installation) • [Usage](#usage) • [Architecture](#architecture)
+
+---
+
+</div>
+
+## 🌟 Overview
 
 SerenityAI is a sophisticated voice-based AI assistant that provides companionship, information, and support to elderly users through simple phone calls. No apps, no complicated technology - just call and talk.
 
-### Key Features
+> **🎯 Mission**: Making technology accessible and beneficial for elderly users through natural voice conversations.
 
-- **24/7 Voice Companionship**: Always available for conversation and support
-- **Natural Conversations**: Powered by OpenAI Realtime API with low-latency audio streaming
-- **UK-Focused Services**: Integration with NHS, Age UK, and local services
-- **Simple Access**: Just a phone call - no apps or tech skills required
-- **Privacy-First**: GDPR compliant with phone number hashing and PII anonymization
-- **Flexible Pricing**: 5-minute free trial, then £6/hour pay-as-you-go
+### ✨ Key Features
 
-## Technology Stack
+| Feature | Description |
+|---------|-------------|
+| 🗣️ **24/7 Voice Companionship** | Always available for conversation and support |
+| 🤖 **Natural Conversations** | Powered by OpenAI Realtime API with low-latency audio streaming |
+| 🏥 **UK-Focused Services** | Integration with NHS, Age UK, and local services |
+| 📞 **Simple Access** | Just a phone call - no apps or tech skills required |
+| 🔒 **Privacy-First** | GDPR compliant with phone number hashing and PII anonymization |
+| 💰 **Flexible Pricing** | 5-minute free trial, then £6/hour pay-as-you-go |
+| 🔧 **12 Built-in Tools** | Web search, NHS lookup, weather, news, reminders, and more |
+| 🎭 **Emotion-Aware** | 4 voice personalities that adapt to user's emotional state |
+
+## 🛠️ Technology Stack
+
+<table>
+<tr>
+<td width="50%">
 
 ### Core Framework
-- **FastAPI**: Modern async web framework
-- **Python 3.9+**: Primary development language
-- **Uvicorn/Gunicorn**: Production-grade ASGI server
+- **FastAPI** - Modern async web framework
+- **Python 3.9+** - Primary language
+- **Uvicorn/Gunicorn** - ASGI server
 
 ### AI & Voice Services
-- **OpenAI Realtime API**: Primary voice AI (GPT-4 Turbo with audio)
-- **Google Cloud Text-to-Speech**: Chirp3 HD voices (4 UK voices)
-- **Groq (Llama 3.1 70B)**: Fallback LLM (75% faster, 85% cheaper)
-- **Deepgram Nova-2**: Fallback STT (70% faster, 28% cheaper)
+- **OpenAI Realtime API** - Primary voice AI
+- **Google Chirp3 HD** - TTS (4 UK voices)
+- **Groq (Llama 3.1 70B)** - Fallback LLM
+- **Deepgram Nova-2** - Fallback STT
+
+</td>
+<td width="50%">
 
 ### Communication & Payments
-- **Twilio**: Voice telephony infrastructure
-- **Stripe**: Payment processing via Twilio Pay
+- **Twilio** - Voice telephony
+- **Stripe** - Payment processing
 
 ### Data Storage
-- **PostgreSQL**: Conversation logging and training data (asyncpg)
-- **Redis**: Subscription management and caching
+- **PostgreSQL** - Conversation logs
+- **Redis** - Subscriptions & caching
 
 ### Integration Framework
-- **Model Context Protocol (MCP)**: Standardized tool integration
-  - Web Search MCP Server (Brave API / DuckDuckGo)
-  - NHS Healthcare MCP Server
-  - Age UK Services MCP Server
+- **Model Context Protocol (MCP)** 
+  - Web Search Server
+  - NHS Healthcare Server
+  - Age UK Services Server
+
+</td>
+</tr>
+</table>
 
 ## Project Structure
 
@@ -107,9 +143,13 @@ D:\SerenityAI/
     └── find_*_name.py
 ```
 
-## Installation
+## 🚀 Quick Start
 
 ### Prerequisites
+
+![Python](https://img.shields.io/badge/Python-3.9+-blue?logo=python&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-12+-316192?logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-6+-DC382D?logo=redis&logoColor=white)
 
 - Python 3.9 or higher
 - PostgreSQL 12+
@@ -207,9 +247,19 @@ python main.py
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-## Usage
+## 📞 Usage
 
 ### Making a Call
+
+```mermaid
+graph LR
+    A[📱 Dial Number] --> B[🎙️ Greeting]
+    B --> C[⏱️ 5 Min Free Trial]
+    C --> D{Continue?}
+    D -->|Yes| E[💳 Pay £6/hour]
+    D -->|No| F[👋 Goodbye]
+    E --> G[💬 Chat Unlimited]
+```
 
 1. **Dial the Twilio number**: Call the configured Twilio phone number
 2. **Greeting**: You'll hear: "Hello, it's Serenity. I'm here to chat and help."
@@ -217,49 +267,95 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 4. **Payment**: After 4:30, you'll be prompted to pay £6 for another hour
 5. **Continue**: Keep chatting as long as you like!
 
-### Available Features
+### 💡 Available Features
 
-- **General Conversation**: Chat about anything
-- **Information Lookup**: Ask about weather, news, facts
-- **Local Services**: Find NHS services, chiropodists, Age UK support
-- **Storytelling**: Request stories on any topic
-- **Memory**: The AI remembers your preferences across calls
+<table>
+<tr>
+<td width="50%">
 
-### Example Conversations
+#### 🗣️ Conversation
+- General chat and companionship
+- Emotion detection and empathy
+- Memory across calls
+- Story generation
 
+#### 🔍 Information
+- Web search (Brave/DuckDuckGo)
+- UK news headlines
+- Weather forecasts
+- General knowledge
+
+</td>
+<td width="50%">
+
+#### 🏥 Healthcare & Services
+- NHS service finder
+- Age UK befriending services
+- Local chiropodist search
+- Medication reminders
+
+#### 🎭 Personalization
+- 4 voice personalities
+- Context-aware responses
+- Preference learning
+- Emotional adaptation
+
+</td>
+</tr>
+</table>
+
+### 💬 Example Conversations
+
+```plaintext
+👤 User: "What's the weather like today?"
+🤖 AI: "Let me check that for you... It's partly cloudy with a high of 18°C..."
+
+👤 User: "I need to find a chiropodist near me"
+🤖 AI: "I can help with that. What's your postcode?"
+
+👤 User: "Can you tell me a story about the countryside?"
+🤖 AI: "Of course! Once upon a time in the rolling hills of Yorkshire..."
+
+👤 User: "I'm feeling a bit lonely today"
+🤖 AI: "I'm here with you. Would you like to chat about what's on your mind?"
 ```
-User: "What's the weather like today?"
-AI: "Let me check that for you... [fetches weather]"
 
-User: "I need to find a chiropodist near me"
-AI: "I can help with that. What's your postcode?"
+## 📡 API Endpoints
 
-User: "Can you tell me a story about the countryside?"
-AI: "Of course! Once upon a time in the rolling hills..."
-```
-
-## API Endpoints
-
-### Voice Endpoints
+<details>
+<summary><b>Voice Endpoints</b></summary>
 
 - `POST /voice/entry` - Initial call entry point (Twilio webhook)
 - `POST /voice/chat` - Main conversation handler (Twilio webhook)
 - `WS /voice/stream` - OpenAI Realtime WebSocket connection
+- `GET /voice/stream/health` - WebSocket health check
 
-### Payment Endpoints
+</details>
+
+<details>
+<summary><b>Payment Endpoints</b></summary>
 
 - `POST /payment/start` - Initiate Twilio Pay
 - `POST /payment/callback` - Payment result webhook
 
-### Utility Endpoints
+</details>
+
+<details>
+<summary><b>MCP Endpoints</b></summary>
+
+- `GET /mcp/health` - MCP server status (3 servers, 12 tools)
+
+</details>
+
+<details>
+<summary><b>Utility Endpoints</b></summary>
 
 - `GET /news` - Get UK news headlines
 - `GET /weather` - Get weather forecast
 - `POST /stripe/webhook` - Stripe event webhook
-
-### Status Endpoints
-
 - `GET /` - Health check
+
+</details>
 
 ## Development
 
@@ -295,78 +391,177 @@ mypy .
 python scripts/test_mcp_integration.py
 ```
 
-## Deployment
+## 🚀 Deployment
 
-### Docker Deployment
+### 🐳 Docker Deployment
 
+<table>
+<tr>
+<td width="50%">
+
+**Development**
 ```bash
 # Build image
-docker build -t serenityai:latest .
+docker build -t serenityai:dev .
 
-# Run container
-docker run -p 8000:8000 --env-file .env serenityai:latest
+# Run with hot reload
+docker run -p 8000:8000 \
+  -v $(pwd):/app \
+  --env-file .env \
+  serenityai:dev
 ```
 
-### Production Deployment (Railway/Heroku)
+</td>
+<td width="50%">
 
-1. Set all environment variables in platform settings
-2. Configure PostgreSQL and Redis add-ons
-3. Set build command: `pip install -r requirements.txt`
-4. Set start command: `gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT`
-
-### Environment-Specific Configuration
-
+**Production**
 ```bash
-# Set environment
-export ENV=production  # or development, staging
+# Build production image
+docker build -f Dockerfile.production \
+  -t serenityai:latest .
 
-# Production: Disable debug logging
-export TF_CPP_MIN_LOG_LEVEL=2
+# Run with resource limits
+docker run -p 8000:8000 \
+  --memory="2g" \
+  --cpus="1.5" \
+  --env-file .env.production \
+  serenityai:latest
 ```
 
-## Architecture
+</td>
+</tr>
+</table>
 
-### High-Level Flow
+### ☁️ Cloud Platform Deployment
 
+<table>
+<tr>
+<td width="33%">
+
+**🚄 Railway**
+```bash
+# Install Railway CLI
+npm i -g @railway/cli
+
+# Login and deploy
+railway login
+railway up
 ```
-┌─────────────┐
-│   User      │
-│   (Phone)   │
-└──────┬──────┘
-       │ Call
-       ▼
-┌─────────────────────────────────────────────┐
-│              Twilio                         │
-│  (Voice Gateway + Media Streams)           │
-└──────┬──────────────────────────────────────┘
-       │ HTTP Webhooks / WebSocket
-       ▼
-┌─────────────────────────────────────────────┐
-│           SerenityAI FastAPI                │
-│  ┌────────────────────────────────────┐     │
-│  │  Voice Entry → Conversation Handler│     │
-│  └──────┬─────────────────────────────┘     │
-│         │                                    │
-│         ▼                                    │
-│  ┌─────────────────────────────────────┐    │
-│  │  OpenAI Realtime API               │    │
-│  │  (WebSocket Audio Streaming)        │    │
-│  └──────┬──────────────────────────────┘    │
-│         │                                    │
-│         ▼                                    │
-│  ┌─────────────────────────────────────┐    │
-│  │  MCP Servers (Tools)               │    │
-│  │  - Web Search                       │    │
-│  │  - NHS Services                     │    │
-│  │  - Age UK                          │    │
-│  └─────────────────────────────────────┘    │
-└─────────────────────────────────────────────┘
-       │           │
-       ▼           ▼
-┌──────────┐  ┌─────────┐
-│PostgreSQL│  │  Redis  │
-│(Logs)    │  │(Subs)   │
-└──────────┘  └─────────┘
+
+**Auto-deploy**: Connect GitHub for CD
+
+</td>
+<td width="33%">
+
+**🟣 Heroku**
+```bash
+# Create app
+heroku create serenityai
+
+# Add buildpack
+heroku buildpacks:set heroku/python
+
+# Deploy
+git push heroku main
+```
+
+**Scale**: `heroku ps:scale web=2`
+
+</td>
+<td width="33%">
+
+**🔵 Azure**
+```bash
+# Create resource group
+az group create -n serenityai-rg
+
+# Deploy container
+az container create \
+  --resource-group serenityai-rg \
+  --name serenityai \
+  --image serenityai:latest
+```
+
+**Database**: Use Azure PostgreSQL
+
+</td>
+</tr>
+</table>
+
+### ⚙️ Production Configuration
+
+| Setting | Development | Production |
+|---------|-------------|------------|
+| **Workers** | 1 | 4+ (CPU cores × 2) |
+| **Logging** | DEBUG | INFO |
+| **SSL** | Optional | Required (Let's Encrypt) |
+| **Database Pool** | 5 connections | 20+ connections |
+| **Redis** | Local | Cloud (ElastiCache/Azure) |
+| **Monitoring** | Console logs | CloudWatch/Azure Monitor |
+
+### 🔐 Security Checklist
+
+- [ ] All API keys in environment variables
+- [ ] Database SSL/TLS enabled
+- [ ] Redis password authentication
+- [ ] Webhook signature verification
+- [ ] Rate limiting enabled
+- [ ] CORS configured for production domains
+- [ ] Firewall rules (only ports 80/443)
+- [ ] Regular security updates
+
+
+
+## 🏗️ Architecture
+
+### System Architecture
+
+```mermaid
+graph TB
+    subgraph "User Layer"
+        A[📱 Phone Call<br/>via Twilio]
+    end
+    
+    subgraph "Communication Layer"
+        B[🌐 FastAPI Server<br/>Twilio Webhooks]
+        C[🔌 WebSocket<br/>OpenAI Realtime]
+    end
+    
+    subgraph "AI Layer"
+        D[🤖 OpenAI GPT-4<br/>Realtime API]
+        E[🧠 AI Processing<br/>Vision, Tools, Functions]
+    end
+    
+    subgraph "Integration Layer"
+        F[🔧 MCP Server<br/>3 Servers, 12 Tools]
+        G[💳 Stripe<br/>Payment Processing]
+        H[📰 News API<br/>UK Headlines]
+        I[🌤️ Weather API<br/>Forecast]
+    end
+    
+    subgraph "Data Layer"
+        J[(📊 PostgreSQL<br/>Call Records, Users)]
+        K[(🔴 Redis<br/>Sessions, Cache)]
+        L[📝 Logs<br/>CloudWatch]
+    end
+    
+    A -->|Voice| B
+    B <-->|Audio Stream| C
+    C <-->|Realtime| D
+    D <--> E
+    E <--> F
+    B --> G
+    F --> H
+    F --> I
+    B --> J
+    B --> K
+    B --> L
+    
+    style A fill:#e1f5ff
+    style D fill:#fff4e6
+    style F fill:#f3e5f5
+    style J fill:#e8f5e9
+    style K fill:#ffebee
 ```
 
 ### Key Design Patterns
@@ -415,35 +610,167 @@ See `documents/action-items.md` for detailed tracking.
 
 See detailed analysis in code review report.
 
-## Contributing
+## 🤝 Contributing
 
 This is a private project. For authorized contributors:
 
-1. Create a feature branch
-2. Make changes with tests
-3. Submit pull request
-4. Ensure all tests pass
-5. Get code review approval
+<table>
+<tr>
+<td width="50%">
 
-## License
+### 📝 Development Workflow
 
-Proprietary. All rights reserved.
+1. **Create Feature Branch**
+   ```bash
+   git checkout -b feature/your-feature
+   ```
 
-## Support
+2. **Make Changes**
+   - Follow code style guidelines
+   - Add tests for new features
+   - Update documentation
 
-For issues or questions:
-- Check `documents/` folder for detailed documentation
-- Review `documents/quickstart.md` for setup help
-- Check `documents/troubleshooting.md` for common issues
+3. **Run Tests**
+   ```bash
+   pytest
+   flake8 .
+   mypy .
+   ```
 
-## Acknowledgments
+4. **Submit PR**
+   - Clear description
+   - Link related issues
+   - Request review
 
-- **OpenAI**: Realtime API for natural voice conversations
-- **Twilio**: Voice telephony infrastructure
-- **Anthropic**: Model Context Protocol (MCP) design
-- **Google Cloud**: Text-to-Speech and Speech-to-Text services
-- **NHS & Age UK**: Service data and APIs
+</td>
+<td width="50%">
+
+### 📋 Code Standards
+
+**Python Style**:
+- Follow PEP 8
+- Type hints required
+- Docstrings for functions
+- Max line length: 120
+
+**Commit Messages**:
+```
+feat: add new feature
+fix: resolve bug
+docs: update documentation
+test: add tests
+refactor: improve code
+```
+
+**Testing**:
+- Minimum 80% coverage
+- Unit + integration tests
+- Mock external services
+
+</td>
+</tr>
+</table>
+
+### 🐛 Issue Reporting
+
+Found a bug? Please include:
+- Detailed description
+- Steps to reproduce
+- Expected vs actual behavior
+- Environment (OS, Python version)
+- Relevant logs
+
+
+
+## 📄 License
+
+**Proprietary License** - All rights reserved.
+
+This software is proprietary and confidential. Unauthorized copying, distribution, or use is strictly prohibited.
 
 ---
 
-**SerenityAI** - Bringing companionship and support to elderly users through the power of AI 🤖❤️
+## 🆘 Support
+
+<table>
+<tr>
+<td width="50%">
+
+### 📚 Documentation
+- **Setup Guide**: `documents/quickstart.md`
+- **Troubleshooting**: `documents/troubleshooting.md`
+- **API Reference**: `documents/api-reference.md`
+- **Architecture**: `documents/architecture.md`
+
+</td>
+<td width="50%">
+
+### 🔧 Common Issues
+- **Voice not working**: Check Twilio webhooks
+- **Payment failing**: Verify Stripe keys
+- **MCP errors**: Restart MCP servers
+- **Database errors**: Check PostgreSQL connection
+
+</td>
+</tr>
+</table>
+
+### 📞 Contact
+
+For issues, questions, or support:
+- 📧 Email: support@serenityai.com
+- 📖 Docs: `/documents/` folder
+- 🐛 Issues: GitHub Issues (authorized users)
+
+---
+
+## 🙏 Acknowledgments
+
+<table>
+<tr>
+<td width="25%" align="center">
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/openai/openai-original.svg" width="40"/><br/>
+<b>OpenAI</b><br/>
+Realtime API
+</td>
+<td width="25%" align="center">
+<img src="https://www.vectorlogo.zone/logos/twilio/twilio-icon.svg" width="40"/><br/>
+<b>Twilio</b><br/>
+Voice Infrastructure
+</td>
+<td width="25%" align="center">
+<img src="https://www.vectorlogo.zone/logos/stripe/stripe-icon.svg" width="40"/><br/>
+<b>Stripe</b><br/>
+Payment Processing
+</td>
+<td width="25%" align="center">
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" width="40"/><br/>
+<b>Google Cloud</b><br/>
+Speech Services
+</td>
+</tr>
+<tr>
+<td colspan="2" align="center">
+<b>NHS & Age UK</b><br/>
+Service data and APIs for healthcare information
+</td>
+<td colspan="2" align="center">
+<b>Anthropic</b><br/>
+Model Context Protocol (MCP) design and specification
+</td>
+</tr>
+</table>
+
+---
+
+<div align="center">
+
+**🤖 SerenityAI** - Bringing companionship and support to elderly users through the power of AI ❤️
+
+[![Made with Python](https://img.shields.io/badge/Made%20with-Python-blue?logo=python&logoColor=white)](https://python.org)
+[![Powered by OpenAI](https://img.shields.io/badge/Powered%20by-OpenAI-412991?logo=openai&logoColor=white)](https://openai.com)
+[![Built with FastAPI](https://img.shields.io/badge/Built%20with-FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+
+⭐ Star this repo if you find it useful! | 📧 [Contact Us](mailto:support@serenityai.com)
+
+</div>
