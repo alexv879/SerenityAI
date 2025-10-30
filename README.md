@@ -256,7 +256,7 @@ graph LR
     A[📱 Dial Number] --> B[🎙️ Greeting]
     B --> C[⏱️ 5 Min Free Trial]
     C --> D{Continue?}
-    D -->|Yes| E[💳 Pay £6/hour]
+    D -->|Yes| E[💳 Pay £x/hour]
     D -->|No| F[👋 Goodbye]
     E --> G[💬 Chat Unlimited]
 ```
