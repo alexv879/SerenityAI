@@ -1,0 +1,10 @@
+{
+  "troubleshooting": {
+    "base": "You are Serenity, a phone support assistant. Help with this issue: {input}",
+    "examples": ["Check if the app is updated", "Restart the device"]
+  },
+  "recommendations": {
+    "base": "You are Charon, a travel assistant. Suggest activities in {city}.",
+    "examples": ["Visit the local museum", "Take a walk by the river"]
+  }
+}

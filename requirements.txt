@@ -1,0 +1,66 @@
+# Serenity AI v2.1 - Production Dependencies
+# Python 3.9+
+
+# === Core Framework ===
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+python-dotenv==1.0.0
+gunicorn==20.1.0
+
+# === Telephony & Payments ===
+twilio==8.10.0
+stripe==7.4.0  # Required for Twilio Pay integration
+
+# === Optimized AI Stack ===
+groq==0.4.1  # Groq Llama 3.1 70B - 75% faster + 85% cheaper than Gemini (fallback)
+deepgram-sdk==3.0.0  # Deepgram Nova-2 STT - 70% faster + 28% cheaper than Google Cloud STT (fallback)
+
+# === OpenAI Realtime API (Primary) ===
+openai==1.14.0  # Official OpenAI SDK with Realtime API support
+websockets==12.0  # WebSocket client for Realtime API streaming
+
+# === Model Context Protocol (MCP) ===
+mcp==0.9.0  # MCP SDK for tool integration
+httpx[http2]==0.25.2  # HTTP client with HTTP/2 support for MCP
+
+# === External APIs for Function Calling ===
+newsapi-python==0.2.7  # NewsAPI for UK news headlines
+pyowm==3.3.0  # OpenWeatherMap Python wrapper
+wikipedia==1.4.0  # Wikipedia API wrapper
+
+# === MCP Search & Information APIs ===
+beautifulsoup4==4.12.2  # HTML parsing for web scraping
+lxml==4.9.3  # XML/HTML parser
+
+# === Google Cloud TTS (Chirp3 HD Voices - Fallback) ===
+google-cloud-texttospeech==2.15.0
+google-cloud-speech==2.22.0
+google-cloud-aiplatform==1.32.0
+google-api-python-client==2.92.0
+
+# === Database (PostgreSQL) ===
+asyncpg==0.29.0  # PostgreSQL async driver for conversation logging
+psycopg2-binary==2.9.9  # PostgreSQL driver (synchronous fallback)
+
+# === Caching & Rate Limiting ===
+redis[asyncio]==5.0.1
+fastapi-limiter==0.1.5
+
+# === HTTP & Data Processing ===
+httpx==0.25.2  # Async HTTP client
+requests==2.31.0  # HTTP library
+pydantic==2.5.0  # Data validation
+
+# === Language Detection ===
+langdetect==1.0.9
+langcodes==3.3.0
+
+# === Testing ===
+pytest==7.4.0
+
+# === Compatibility ===
+protobuf==3.20.3
+setuptools>=68.0.0
+pip>=23.3.0
+wheel>=0.42.0

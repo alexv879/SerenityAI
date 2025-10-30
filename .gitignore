@@ -1,0 +1,99 @@
+# Environment Variables (CRITICAL - Never commit!)
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*$py.class
+*.so
+.Python
+
+# Virtual Environments
+new_env/
+venv/
+ENV/
+env/
+.venv/
+
+# Logs
+*.log
+app_logs.txt
+application_logs.txt
+pytest_logs.txt
+logs/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+*.bak
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Build
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Temporary Files
+temp/
+tmp/
+*.tmp
+list_files_structure.py
+test_async_redis.py
+
+# Database
+*.db
+*.sqlite3
+*.sqlite
+
+# Backup
+*.bundle
+backup-before-clean.bundle
+
+# Internal Documentation (NOT for public GitHub)
+docs/
+internal/
+documents/
+scripts/
+*.md
+!README.md
+!LICENSE.md
+!CONTRIBUTING.md
+
+# Duplicate/old endpoint files
+endpoints/voice_handler_new.py
+
+# Google Credentials (if stored locally)
+google-credentials.json
+*-credentials.json
+*.pem
+*.key
+*.crt
+*.p12
+
+# Node modules (if any)
+node_modules/
+
+# Railway/Deployment
+.railway/
+
+# Claude Code
+.claude/
