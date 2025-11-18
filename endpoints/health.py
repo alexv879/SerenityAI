@@ -242,6 +242,14 @@ async def metrics() -> Dict[str, Any]:
     except Exception as e:
         metrics_data["metrics"]["database"] = {"error": str(e)}
 
+    # Cache metrics
+    try:
+        from utils.cache import get_cache_manager
+        cache_mgr = await get_cache_manager()
+        metrics_data["metrics"]["cache"] = cache_mgr.get_stats()
+    except Exception as e:
+        metrics_data["metrics"]["cache"] = {"error": str(e)}
+
     # Add more metrics as needed
     # - Active calls count
     # - Total calls today
