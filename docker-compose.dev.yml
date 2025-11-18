@@ -1,0 +1,39 @@
+# SerenityAI - Development Override
+# Use with: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+version: '3.8'
+
+services:
+  # Override app for development with hot-reload
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder  # Use builder stage for dev dependencies
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload --log-level debug
+    environment:
+      ENV: development
+      LOG_LEVEL: DEBUG
+      PYTHONUNBUFFERED: 1
+    volumes:
+      # Mount entire codebase for hot-reload
+      - ./:/app
+      # Don't override these directories
+      - /app/__pycache__
+      - /app/.pytest_cache
+    ports:
+      - "8000:8000"  # Main app
+      - "5678:5678"  # Debugpy port for VS Code debugging
+
+  # Development PostgreSQL with exposed port for direct access
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: dev_password_not_for_production
+    ports:
+      - "5432:5432"
+
+  # Development Redis with no password for easier testing
+  redis:
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"

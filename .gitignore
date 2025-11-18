@@ -72,11 +72,13 @@ backup-before-clean.bundle
 docs/
 internal/
 documents/
-scripts/
+scripts/*
+!scripts/init-db.sql
 *.md
 !README.md
 !LICENSE.md
 !CONTRIBUTING.md
+!DOCKER.md
 
 # Duplicate/old endpoint files
 endpoints/voice_handler_new.py
