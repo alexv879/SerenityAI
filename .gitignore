@@ -79,6 +79,7 @@ scripts/*
 !LICENSE.md
 !CONTRIBUTING.md
 !DOCKER.md
+!MAGICAL_FEATURES.md
 
 # Duplicate/old endpoint files
 endpoints/voice_handler_new.py

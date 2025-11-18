@@ -187,7 +187,32 @@ class ToolExecutor:
             
             elif function_name == "switch_mode":
                 return await self.switch_mode(**arguments)
-            
+
+            # Magical features for elderly users
+            elif function_name == "add_medication":
+                return await self.add_medication(**arguments)
+
+            elif function_name == "list_medications":
+                return await self.list_medications(**arguments)
+
+            elif function_name == "medication_taken":
+                return await self.medication_taken(**arguments)
+
+            elif function_name == "add_emergency_contact":
+                return await self.add_emergency_contact(**arguments)
+
+            elif function_name == "trigger_emergency":
+                return await self.trigger_emergency(**arguments)
+
+            elif function_name == "morning_greeting":
+                return await self.morning_greeting(**arguments)
+
+            elif function_name == "evening_checkin":
+                return await self.evening_checkin(**arguments)
+
+            elif function_name == "track_mood":
+                return await self.track_mood(**arguments)
+
             else:
                 logger.warning(f"Unknown function: {function_name}")
                 return {"error": f"Unknown function: {function_name}"}
@@ -731,6 +756,281 @@ class ToolExecutor:
             "temperature": config["temperature"],
             "instruction": f"Session should be reinitialized with voice={config['voice']} and appropriate system prompt for {mode} mode. Temperature: {config['temperature']}"
         }
+
+    # ========== MAGICAL FEATURES FOR ELDERLY USERS ==========
+
+    async def add_medication(
+        self,
+        user_id: str,
+        medication_name: str,
+        dosage: str,
+        times: List[str],
+        frequency: str = "daily",
+        with_food: bool = False,
+        instructions: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Add medication reminder for user
+
+        Args:
+            user_id: User's phone number
+            medication_name: Name of medication
+            dosage: Dosage amount (e.g., "one tablet")
+            times: Times to take (e.g., ["09:00", "21:00"])
+            frequency: How often (daily, twice_daily, weekly)
+            with_food: Whether to take with food
+            instructions: Additional instructions
+
+        Returns:
+            Confirmation message
+        """
+        try:
+            from utils.medication_manager import get_medication_manager
+            med_mgr = await get_medication_manager(self.redis_client)
+
+            result = await med_mgr.add_medication(
+                phone_number=user_id,
+                medication_name=medication_name,
+                dosage=dosage,
+                frequency=frequency,
+                times=times,
+                instructions=instructions,
+                with_food=with_food
+            )
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error adding medication: {e}")
+            return {
+                "success": False,
+                "message": "I had trouble saving that medication. Please try again.",
+                "error": str(e)
+            }
+
+    async def list_medications(self, user_id: str) -> Dict[str, Any]:
+        """
+        List all medications for user
+
+        Returns:
+            Voice-friendly medication list
+        """
+        try:
+            from utils.medication_manager import get_medication_manager
+            med_mgr = await get_medication_manager(self.redis_client)
+
+            message = await med_mgr.list_medications_voice(user_id)
+
+            return {
+                "success": True,
+                "message": message
+            }
+
+        except Exception as e:
+            logger.error(f"Error listing medications: {e}")
+            return {
+                "success": False,
+                "message": "I'm having trouble accessing your medication list right now."
+            }
+
+    async def medication_taken(
+        self,
+        user_id: str,
+        medication_name: str
+    ) -> Dict[str, Any]:
+        """
+        Record that user took their medication
+
+        Returns:
+            Encouraging confirmation
+        """
+        try:
+            from utils.medication_manager import get_medication_manager
+            med_mgr = await get_medication_manager(self.redis_client)
+
+            result = await med_mgr.record_medication_taken(
+                phone_number=user_id,
+                medication_name=medication_name
+            )
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error recording medication: {e}")
+            return {
+                "success": False,
+                "message": "Thank you for letting me know. I've made a note of that."
+            }
+
+    async def add_emergency_contact(
+        self,
+        user_id: str,
+        contact_name: str,
+        contact_phone: str,
+        relationship: str,
+        priority: int = 1
+    ) -> Dict[str, Any]:
+        """
+        Add emergency contact for user
+
+        Args:
+            user_id: User's phone number
+            contact_name: Contact's name
+            contact_phone: Contact's phone number
+            relationship: Relationship (daughter, son, neighbor, etc.)
+            priority: Call priority (1 = first, 2 = second, etc.)
+
+        Returns:
+            Confirmation message
+        """
+        try:
+            from utils.emergency_system import get_emergency_system
+            emergency_sys = await get_emergency_system(self.redis_client)
+
+            result = await emergency_sys.add_emergency_contact(
+                phone_number=user_id,
+                contact_name=contact_name,
+                contact_phone=contact_phone,
+                relationship=relationship,
+                priority=priority
+            )
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error adding emergency contact: {e}")
+            return {
+                "success": False,
+                "message": "I had trouble saving that contact. Please try again."
+            }
+
+    async def trigger_emergency(
+        self,
+        user_id: str,
+        emergency_type: str = "general"
+    ) -> Dict[str, Any]:
+        """
+        Trigger emergency protocol
+
+        Args:
+            user_id: User's phone number
+            emergency_type: Type of emergency (general, medical, fall)
+
+        Returns:
+            Emergency response
+        """
+        try:
+            from utils.emergency_system import get_emergency_system
+            emergency_sys = await get_emergency_system(self.redis_client)
+
+            result = await emergency_sys.trigger_emergency(
+                phone_number=user_id,
+                emergency_type=emergency_type
+            )
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error triggering emergency: {e}")
+            return {
+                "success": False,
+                "message": (
+                    "I'm having trouble reaching your contacts. "
+                    "Would you like me to connect you to 999 emergency services?"
+                )
+            }
+
+    async def morning_greeting(
+        self,
+        user_id: str,
+        user_name: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Create personalized morning greeting
+
+        Returns:
+            Warm morning message
+        """
+        try:
+            from utils.companionship import get_companionship_system
+            companion = await get_companionship_system(self.redis_client)
+
+            message = await companion.create_morning_greeting(user_id, user_name)
+
+            return {
+                "success": True,
+                "message": message,
+                "time_of_day": "morning"
+            }
+
+        except Exception as e:
+            logger.error(f"Error creating morning greeting: {e}")
+            return {
+                "success": True,
+                "message": "Good morning! How lovely to hear from you. How are you feeling today?"
+            }
+
+    async def evening_checkin(
+        self,
+        user_id: str,
+        user_name: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Create personalized evening check-in
+
+        Returns:
+            Gentle evening message
+        """
+        try:
+            from utils.companionship import get_companionship_system
+            companion = await get_companionship_system(self.redis_client)
+
+            message = await companion.create_evening_message(user_id, user_name)
+
+            return {
+                "success": True,
+                "message": message,
+                "time_of_day": "evening"
+            }
+
+        except Exception as e:
+            logger.error(f"Error creating evening message: {e}")
+            return {
+                "success": True,
+                "message": "Good evening! How has your day been?"
+            }
+
+    async def track_mood(
+        self,
+        user_id: str,
+        mood: str,
+        context: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Track user mood and provide emotional support
+
+        Args:
+            user_id: User's phone number
+            mood: Detected mood (happy, sad, lonely, anxious, unwell)
+            context: What they said
+
+        Returns:
+            Empathetic response
+        """
+        try:
+            from utils.companionship import get_companionship_system
+            companion = await get_companionship_system(self.redis_client)
+
+            result = await companion.track_mood(user_id, mood, context)
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error tracking mood: {e}")
+            return {
+                "success": True,
+                "response": "I'm here for you. Would you like to talk about it?"
+            }
 
 
 # Usage example
