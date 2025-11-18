@@ -1,13 +1,16 @@
 """
-Daily Companionship System - Combat loneliness with routine check-ins
+Daily Companionship System - Pure entertainment and friendly conversation
 
 Creates a warm, consistent companion experience with:
 - Personalized morning greetings
 - Evening wind-down conversations
 - Birthday and special occasion remembrance
-- Mood tracking and emotional support
+- Reminiscence therapy (talking about "the good old days")
 - Conversation continuity
 - Gentle encouragement and positivity
+- Entertainment suggestions
+
+ENTERTAINMENT ONLY - No health/medical advice or features!
 
 This is the heart of making the AI feel like a true friend.
 

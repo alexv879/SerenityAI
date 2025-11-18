@@ -188,30 +188,36 @@ class ToolExecutor:
             elif function_name == "switch_mode":
                 return await self.switch_mode(**arguments)
 
-            # Magical features for elderly users
-            elif function_name == "add_medication":
-                return await self.add_medication(**arguments)
+            # ENTERTAINMENT FEATURES (AUDIO ONLY - NO HEALTH/MEDICAL)
+            elif function_name == "play_music":
+                return await self.play_music(**arguments)
 
-            elif function_name == "list_medications":
-                return await self.list_medications(**arguments)
+            elif function_name == "play_trivia":
+                return await self.play_trivia(**arguments)
 
-            elif function_name == "medication_taken":
-                return await self.medication_taken(**arguments)
+            elif function_name == "check_answer":
+                return await self.check_trivia_answer(**arguments)
 
-            elif function_name == "add_emergency_contact":
-                return await self.add_emergency_contact(**arguments)
+            elif function_name == "start_story":
+                return await self.start_interactive_story(**arguments)
 
-            elif function_name == "trigger_emergency":
-                return await self.trigger_emergency(**arguments)
+            elif function_name == "singalong":
+                return await self.start_singalong(**arguments)
+
+            elif function_name == "word_game":
+                return await self.play_word_game(**arguments)
+
+            elif function_name == "record_message":
+                return await self.record_family_message(**arguments)
+
+            elif function_name == "listen_messages":
+                return await self.listen_to_messages(**arguments)
 
             elif function_name == "morning_greeting":
                 return await self.morning_greeting(**arguments)
 
             elif function_name == "evening_checkin":
                 return await self.evening_checkin(**arguments)
-
-            elif function_name == "track_mood":
-                return await self.track_mood(**arguments)
 
             else:
                 logger.warning(f"Unknown function: {function_name}")
@@ -757,9 +763,9 @@ class ToolExecutor:
             "instruction": f"Session should be reinitialized with voice={config['voice']} and appropriate system prompt for {mode} mode. Temperature: {config['temperature']}"
         }
 
-    # ========== MAGICAL FEATURES FOR ELDERLY USERS ==========
+    # ========== ENTERTAINMENT FEATURES FOR ELDERLY USERS (AUDIO ONLY) ==========
 
-    async def add_medication(
+    async def play_music(
         self,
         user_id: str,
         medication_name: str,
