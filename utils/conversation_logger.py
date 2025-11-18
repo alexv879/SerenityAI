@@ -50,12 +50,15 @@ class ConversationLogger:
         Call this during app startup
         """
         try:
-            # Create connection pool
+            # Create connection pool with production-ready settings
             self.pool = await asyncpg.create_pool(
                 self.database_url,
-                min_size=2,
-                max_size=10,
-                command_timeout=60
+                min_size=5,
+                max_size=50,  # Increased for production load
+                max_queries=50000,
+                max_inactive_connection_lifetime=300,
+                command_timeout=60,
+                timeout=10  # Wait 10s for available connection before failing
             )
 
             # Create tables if they don't exist
@@ -325,17 +328,25 @@ class ConversationLogger:
             JSONL string (one JSON object per line)
         """
         try:
-            consent_filter = "AND user_consented = TRUE" if only_consented else ""
-
+            # Use separate queries to avoid SQL injection via f-string
             async with self.pool.acquire() as conn:
                 # Get conversations
-                conversations = await conn.fetch(f"""
-                    SELECT id, call_sid
-                    FROM conversations
-                    WHERE DATE(created_at) BETWEEN $1 AND $2
-                    {consent_filter}
-                    ORDER BY created_at
-                """, start_date, end_date)
+                if only_consented:
+                    query = """
+                        SELECT id, call_sid
+                        FROM conversations
+                        WHERE DATE(created_at) BETWEEN $1 AND $2
+                        AND user_consented = TRUE
+                        ORDER BY created_at
+                    """
+                else:
+                    query = """
+                        SELECT id, call_sid
+                        FROM conversations
+                        WHERE DATE(created_at) BETWEEN $1 AND $2
+                        ORDER BY created_at
+                    """
+                conversations = await conn.fetch(query, start_date, end_date)
 
             jsonl_lines = []
 

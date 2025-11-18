@@ -46,11 +46,17 @@ async def trigger_payment_collection(request: Request):
         response.redirect("/voice/entry")
         return Response(content=str(response), media_type="application/xml")
 
+    # Store expected payment amount in Redis for validation
+    expected_amount = "6.00"
+    redis_client = await subscription_mgr._get_client()
+    payment_key = f"payment:{call_sid}:expected_amount"
+    await redis_client.set(payment_key, expected_amount, ex=300)  # 5 minute expiry
+
     # Initiate Twilio Pay
     response = VoiceResponse()
 
     pay = Pay(
-        charge_amount="6.00",
+        charge_amount=expected_amount,
         currency="GBP",
         payment_connector=config.TWILIO_PAY_CONNECTOR_NAME,  # From config/env
         status_callback="/payment/complete",
@@ -81,29 +87,53 @@ async def trigger_payment_collection(request: Request):
 async def handle_payment_complete(request: Request):
     """
     Webhook: Called after Twilio Pay completes (success or failure)
+    Includes mandatory signature validation for security
     """
-    # Optional: verify Twilio signature if base URL is provided
+    # Get form data first
+    form = await request.form()
+
+    # Validate Twilio signature (MANDATORY for security)
+    base_url = os.getenv("PUBLIC_BASE_URL")
+    if not base_url:
+        raise HTTPException(
+            status_code=500,
+            detail="PUBLIC_BASE_URL not configured - cannot validate webhook signature"
+        )
+
     try:
-        validator = RequestValidator(os.getenv("TWILIO_AUTH_TOKEN", ""))
+        validator = RequestValidator(os.getenv("TWILIO_AUTH_TOKEN"))
         signature = request.headers.get("X-Twilio-Signature", "")
-        # Construct full URL if externally reachable base is provided
-        base_url = os.getenv("PUBLIC_BASE_URL")
-        url = f"{base_url}/payment/complete" if base_url else str(request.url)
-        form = await request.form()
+        url = f"{base_url}/payment/complete"
         params = dict(form)
-        if base_url and not validator.validate(url, params, signature):
-            return Response(status_code=403)
-    except Exception:
-        # Proceed without blocking; loggers can capture later
-        form = await request.form()
+
+        if not validator.validate(url, params, signature):
+            raise HTTPException(status_code=403, detail="Invalid Twilio signature")
+
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=f"Signature validation failed: {str(e)}")
 
     call_sid = form.get("CallSid")
     phone = form.get("From")
     payment_result = form.get("Result")  # "success" or "failure"
     payment_token = form.get("PaymentToken")
     payment_error = form.get("PaymentError")
+    charge_amount = form.get("ChargeAmount", "0.00")  # Amount actually charged
 
     response = VoiceResponse()
+
+    # Validate payment amount matches what we expected
+    subscription_mgr = await get_subscription_manager()
+    redis_client = await subscription_mgr._get_client()
+    payment_key = f"payment:{call_sid}:expected_amount"
+    expected_amount = await redis_client.get(payment_key)
+
+    if expected_amount and expected_amount != charge_amount:
+        response.say(
+            "Payment amount verification failed. Please contact support.",
+            voice=VOICE
+        )
+        response.hangup()
+        return Response(content=str(response), media_type="application/xml")
 
     if payment_result == "success":
         # Create Stripe charge
