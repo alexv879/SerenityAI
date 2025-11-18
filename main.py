@@ -17,6 +17,7 @@ from endpoints.news_weather import router as news_weather_router
 from endpoints.stripe_webhook import router as stripe_webhook_router
 from endpoints.conversation_handler import router as conversation_router
 from endpoints.realtime_voice_handler import router as realtime_voice_router  # OpenAI Realtime WebSocket
+from endpoints.health import router as health_router  # Health check and metrics endpoints
 
 # Optional/absent modules are guarded to avoid startup failures
 try:
@@ -60,7 +61,16 @@ async def lifespan(app: FastAPI):
         log_message("info", "Subscription manager closed")
     except Exception:
         pass
-    
+
+    # Close Groq client HTTP connections
+    try:
+        from utils.groq_client import get_groq_client
+        groq_client = await get_groq_client()
+        await groq_client.close()
+        log_message("info", "Groq client closed")
+    except Exception:
+        pass
+
     # Shutdown MCP servers
     try:
         from utils.mcp_initialization import shutdown_mcp_servers
@@ -78,6 +88,7 @@ app.include_router(realtime_voice_router) # /voice/stream (WebSocket for OpenAI 
 app.include_router(payment_router)      # /payment/*
 app.include_router(news_weather_router) # /news, /weather
 app.include_router(stripe_webhook_router) # /stripe/webhook
+app.include_router(health_router)       # /health, /health/detailed, /health/ready, /health/live, /metrics
 
 @app.get("/")
 def root():

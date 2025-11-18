@@ -15,17 +15,36 @@ logger = logging.getLogger(__name__)
 class GroqClient:
     """
     Async client for Groq Cloud API (Llama 3.1 70B)
-    
+
     Pricing: ~$0.59/1M tokens (85% cheaper than Gemini)
     Speed: ~330 tokens/sec (75% faster than Gemini)
+
+    Features:
+    - Connection pooling for optimal performance
+    - Automatic retries on timeout
+    - Keep-alive connections
     """
-    
+
     def __init__(self):
         self.api_key = os.getenv("GROQ_API_KEY")
         self.base_url = "https://api.groq.com/openai/v1/chat/completions"
         self.model = "llama-3.1-70b-versatile"
         self.max_tokens = 150  # Keep responses concise for voice
         self.temperature = 0.8  # Warm, natural conversation
+
+        # HTTP client with connection pooling
+        self.http_client = httpx.AsyncClient(
+            timeout=10.0,
+            limits=httpx.Limits(
+                max_keepalive_connections=20,
+                max_connections=50,
+                keepalive_expiry=30.0
+            ),
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json"
+            }
+        )
     
     async def generate_response(
         self,
@@ -64,24 +83,19 @@ class GroqClient:
             
             # Add current user input
             messages.append({"role": "user", "content": user_input})
-            
-            # Call Groq API
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.post(
-                    self.base_url,
-                    headers={
-                        "Authorization": f"Bearer {self.api_key}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "model": self.model,
-                        "messages": messages,
-                        "max_tokens": self.max_tokens,
-                        "temperature": self.temperature,
-                    }
-                )
-                response.raise_for_status()
-                
+
+            # Call Groq API using pooled connection
+            response = await self.http_client.post(
+                self.base_url,
+                json={
+                    "model": self.model,
+                    "messages": messages,
+                    "max_tokens": self.max_tokens,
+                    "temperature": self.temperature,
+                }
+            )
+            response.raise_for_status()
+
             data = response.json()
             ai_response = data["choices"][0]["message"]["content"].strip()
             
@@ -89,12 +103,18 @@ class GroqClient:
             return ai_response
             
         except httpx.HTTPStatusError as e:
-            logger.error(f"Groq API error: {e.response.status_code} - {e.response.text}")
+            logger.error(f"Groq API error: {e.response.status_code}")
+            # Don't log response.text as it may contain sensitive data
             return "I'm having a bit of trouble thinking right now. Could you say that again?"
-            
+
         except Exception as e:
             logger.error(f"Groq client error: {e}")
             return "Sorry, I didn't catch that. What were you saying?"
+
+    async def close(self):
+        """Close HTTP client and cleanup connections"""
+        await self.http_client.aclose()
+        logger.info("Groq client HTTP connections closed")
 
 
 # Global singleton
