@@ -1,6 +1,6 @@
 """
 Groq LLM Client - Llama 3.1 70B Integration
-Fast, cost-effective conversation generation
+Fast, cost-effective conversation generation with circuit breaker protection
 """
 
 import asyncio
@@ -8,6 +8,18 @@ import os
 import httpx
 from typing import List, Dict, Optional
 import logging
+
+# Import circuit breaker
+try:
+    from utils.circuit_breaker import circuit_breaker
+    CIRCUIT_BREAKER_AVAILABLE = True
+except ImportError:
+    CIRCUIT_BREAKER_AVAILABLE = False
+    # No-op decorator if circuit breaker not available
+    def circuit_breaker(name=None, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +33,7 @@ class GroqClient:
 
     Features:
     - Connection pooling for optimal performance
-    - Automatic retries on timeout
+    - Circuit breaker prevents cascade failures
     - Keep-alive connections
     """
 
@@ -46,6 +58,7 @@ class GroqClient:
             }
         )
     
+    @circuit_breaker(name="groq", failure_threshold=5, recovery_timeout=60, timeout=10)
     async def generate_response(
         self,
         user_input: str,
@@ -54,12 +67,14 @@ class GroqClient:
     ) -> str:
         """
         Generate AI response for user input
-        
+
+        **Circuit breaker** opens after 5 failures, recovers after 60s
+
         Args:
             user_input: What the user said
             conversation_history: Previous turns [{"role": "user/assistant", "content": "..."}]
             system_prompt: Optional system instructions
-            
+
         Returns:
             AI response text (voice-optimized, concise)
         """

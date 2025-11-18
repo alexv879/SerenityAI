@@ -250,6 +250,20 @@ async def metrics() -> Dict[str, Any]:
     except Exception as e:
         metrics_data["metrics"]["cache"] = {"error": str(e)}
 
+    # Circuit breaker metrics
+    try:
+        from utils.circuit_breaker import get_all_circuit_breakers
+        circuit_breakers = get_all_circuit_breakers()
+        if circuit_breakers:
+            metrics_data["metrics"]["circuit_breakers"] = {
+                name: breaker.get_stats()
+                for name, breaker in circuit_breakers.items()
+            }
+        else:
+            metrics_data["metrics"]["circuit_breakers"] = {"status": "no active circuit breakers"}
+    except Exception as e:
+        metrics_data["metrics"]["circuit_breakers"] = {"error": str(e)}
+
     # Add more metrics as needed
     # - Active calls count
     # - Total calls today

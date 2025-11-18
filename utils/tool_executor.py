@@ -5,8 +5,10 @@ Includes storytelling, jokes, and GDPR-compliant memory management
 
 Features:
 - Redis caching for expensive API calls (40% cost reduction)
+- Circuit breaker pattern prevents cascade failures
 - Timeout protection for external APIs
 - Graceful fallbacks on failures
+- Automatic service recovery detection
 """
 
 import logging
@@ -30,6 +32,18 @@ except ImportError:
         MINUTE_30 = 1800
         HOUR_1 = 3600
         HOUR_24 = 86400
+
+# Import circuit breaker utilities
+try:
+    from utils.circuit_breaker import circuit_breaker
+    CIRCUIT_BREAKER_AVAILABLE = True
+except ImportError:
+    CIRCUIT_BREAKER_AVAILABLE = False
+    # No-op decorator if circuit breaker not available
+    def circuit_breaker(name=None, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
 
 # External API clients
 try:
@@ -183,6 +197,7 @@ class ToolExecutor:
             return {"error": str(e)}
     
     @cached(ttl=CacheTTL.HOUR_1, prefix="uk_news")
+    @circuit_breaker(name="newsapi", failure_threshold=3, recovery_timeout=30, timeout=5)
     async def get_uk_news(
         self,
         category: str = "general",
@@ -192,6 +207,7 @@ class ToolExecutor:
         Get UK news headlines from NewsAPI
 
         **Cached for 1 hour** to reduce API costs and rate limits
+        **Circuit breaker** opens after 3 failures, recovers after 30s
 
         Args:
             category: general, health, technology, business, entertainment, sports
@@ -265,6 +281,7 @@ class ToolExecutor:
             }
     
     @cached(ttl=CacheTTL.MINUTE_30, prefix="weather")
+    @circuit_breaker(name="openweathermap", failure_threshold=3, recovery_timeout=30, timeout=5)
     async def get_weather_forecast(
         self,
         postcode: Optional[str] = None,
@@ -274,6 +291,7 @@ class ToolExecutor:
         Get UK weather forecast from OpenWeatherMap
 
         **Cached for 30 minutes** to reduce API costs
+        **Circuit breaker** opens after 3 failures, recovers after 30s
 
         Args:
             postcode: UK postcode (optional, defaults to London)
@@ -364,6 +382,7 @@ class ToolExecutor:
             }
     
     @cached(ttl=CacheTTL.HOUR_24, prefix="wikipedia")
+    @circuit_breaker(name="wikipedia", failure_threshold=3, recovery_timeout=30, timeout=10)
     async def wikipedia_search(
         self,
         query: str,
@@ -373,6 +392,7 @@ class ToolExecutor:
         Search Wikipedia and return summary
 
         **Cached for 24 hours** to reduce API calls (Wikipedia content is relatively static)
+        **Circuit breaker** opens after 3 failures, recovers after 30s
 
         Args:
             query: Search query
@@ -432,12 +452,14 @@ class ToolExecutor:
             return {"error": "Unable to search Wikipedia", "summary": ""}
     
     @cached(ttl=CacheTTL.HOUR_24, prefix="on_this_day")
+    @circuit_breaker(name="wikipedia_otd", failure_threshold=3, recovery_timeout=30, timeout=10)
     async def on_this_day(self) -> Dict[str, Any]:
         """
         Get historical events that happened on this day
         Uses Wikipedia's "On This Day" feature
 
         **Cached for 24 hours** - content changes daily, cache refreshes at midnight
+        **Circuit breaker** opens after 3 failures, recovers after 30s
 
         Returns:
             Dict with historical events
