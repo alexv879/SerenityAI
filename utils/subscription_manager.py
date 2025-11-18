@@ -37,9 +37,31 @@ class SubscriptionManager:
         self.price_per_hour: float = float(os.getenv("PRICE_PER_HOUR", "6.00"))
 
     async def _get_client(self):
-        """Get or create Redis connection"""
+        """
+        Get or create Redis connection with retry logic
+
+        Implements exponential backoff for connection failures
+        """
         if not self.redis_client:
-            self.redis_client = await redis.from_url(self.redis_url)
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    self.redis_client = await redis.from_url(
+                        self.redis_url,
+                        socket_connect_timeout=5,
+                        socket_timeout=5,
+                        retry_on_timeout=True,
+                        health_check_interval=30
+                    )
+                    logger.info("Redis connection established successfully")
+                    break
+                except Exception as e:
+                    if attempt == max_retries - 1:
+                        logger.error(f"Failed to connect to Redis after {max_retries} attempts: {e}")
+                        raise
+                    backoff_delay = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
+                    logger.warning(f"Redis connection attempt {attempt + 1} failed, retrying in {backoff_delay}s...")
+                    await asyncio.sleep(backoff_delay)
         return self.redis_client
 
     def _hash_phone(self, phone: str) -> str:

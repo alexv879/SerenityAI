@@ -329,36 +329,57 @@ class ConversationLogger:
         """
         try:
             # Use separate queries to avoid SQL injection via f-string
+            # OPTIMIZED: Fetch all data in one query with JOIN to avoid N+1 problem
             async with self.pool.acquire() as conn:
-                # Get conversations
+                # Get conversations with their turns using JOIN
                 if only_consented:
                     query = """
-                        SELECT id, call_sid
-                        FROM conversations
-                        WHERE DATE(created_at) BETWEEN $1 AND $2
-                        AND user_consented = TRUE
-                        ORDER BY created_at
+                        SELECT
+                            c.id as conversation_id,
+                            c.call_sid,
+                            ct.turn_number,
+                            ct.user_input,
+                            ct.ai_response
+                        FROM conversations c
+                        LEFT JOIN conversation_turns ct ON c.id = ct.conversation_id
+                        WHERE DATE(c.created_at) BETWEEN $1 AND $2
+                        AND c.user_consented = TRUE
+                        ORDER BY c.created_at, ct.turn_number
                     """
                 else:
                     query = """
-                        SELECT id, call_sid
-                        FROM conversations
-                        WHERE DATE(created_at) BETWEEN $1 AND $2
-                        ORDER BY created_at
+                        SELECT
+                            c.id as conversation_id,
+                            c.call_sid,
+                            ct.turn_number,
+                            ct.user_input,
+                            ct.ai_response
+                        FROM conversations c
+                        LEFT JOIN conversation_turns ct ON c.id = ct.conversation_id
+                        WHERE DATE(c.created_at) BETWEEN $1 AND $2
+                        ORDER BY c.created_at, ct.turn_number
                     """
-                conversations = await conn.fetch(query, start_date, end_date)
+                rows = await conn.fetch(query, start_date, end_date)
 
+            # Group turns by conversation_id
+            conversations_dict = {}
+            for row in rows:
+                conv_id = row['conversation_id']
+                if conv_id not in conversations_dict:
+                    conversations_dict[conv_id] = []
+
+                # Only add turn if it exists (LEFT JOIN may return null turns)
+                if row['user_input'] is not None:
+                    conversations_dict[conv_id].append({
+                        'user_input': row['user_input'],
+                        'ai_response': row['ai_response']
+                    })
+
+            # Build JSONL output
             jsonl_lines = []
-
-            for conv in conversations:
-                # Get turns for this conversation
-                async with self.pool.acquire() as conn:
-                    turns = await conn.fetch("""
-                        SELECT user_input, ai_response
-                        FROM conversation_turns
-                        WHERE conversation_id = $1
-                        ORDER BY turn_number
-                    """, conv['id'])
+            for conv_id, turns in conversations_dict.items():
+                if not turns:  # Skip conversations with no turns
+                    continue
 
                 # Build messages array
                 messages = []
@@ -366,8 +387,7 @@ class ConversationLogger:
                     messages.append({"role": "user", "content": turn['user_input']})
                     messages.append({"role": "assistant", "content": turn['ai_response']})
 
-                if messages:
-                    jsonl_lines.append(json.dumps({"messages": messages}))
+                jsonl_lines.append(json.dumps({"messages": messages}))
 
             jsonl_output = "\n".join(jsonl_lines)
             logger.info(f"Exported {len(jsonl_lines)} conversations ({len(jsonl_output)} bytes)")
