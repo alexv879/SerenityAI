@@ -48,14 +48,13 @@ class SubscriptionManager:
 
     async def check_active_subscription(self, phone: str) -> Dict:
         """
-        Check if phone has active subscription with minutes remaining
+        Check if phone has active subscription
 
-        Returns:
+        Returns standardized subscription dict with:
             {
-                "active": bool,
-                "minutes_remaining": int,
-                "expires_at": str (ISO timestamp),
-                "tier": "standard" | "premium"
+                "subscription_status": "trial" | "active" | "expired" | "cancelled",
+                "active": bool (computed from subscription_status),
+                ...other fields
             }
         """
         client = await self._get_client()
@@ -66,17 +65,17 @@ class SubscriptionManager:
         data = await client.get(key)
 
         if not data:
-            return {"active": False, "minutes_remaining": 0}
+            # Return default for new users (will trigger trial creation)
+            return {
+                "subscription_status": "none",
+                "active": False
+            }
 
         sub = json.loads(data)
 
-        # Check if expired
-        expires_at = datetime.fromisoformat(sub["expires_at"])
-        if datetime.utcnow() > expires_at:
-            # Expired, deactivate
-            sub["active"] = False
-            sub["minutes_remaining"] = 0
-            await client.set(key, json.dumps(sub))
+        # Compute "active" flag from subscription_status for backward compatibility
+        status = sub.get("subscription_status", "none")
+        sub["active"] = status in ["trial", "active"]
 
         return sub
 
@@ -319,8 +318,10 @@ class SubscriptionManager:
             subscription["hours_used_this_month"] += hours_used
             subscription["total_calls"] += 1
             subscription["last_call_date"] = datetime.utcnow().isoformat()
-            
-            key = f"subscription:{phone_number}"
+
+            # Use hashed phone number for privacy
+            phone_hash = self._hash_phone(phone_number)
+            key = f"user:{phone_hash}:subscription"
             client = await self._get_client()
             await client.set(key, json.dumps(subscription))
             
@@ -425,6 +426,7 @@ class SubscriptionManager:
     ):
         """
         Create new subscription after successful payment
+        Uses standardized schema consistent with trial/active subscriptions
 
         Args:
             phone: Customer phone number
@@ -434,15 +436,24 @@ class SubscriptionManager:
         client = await self._get_client()
         phone_hash = self._hash_phone(phone)
 
-        expires_at = datetime.utcnow() + timedelta(hours=1)
+        now = datetime.utcnow()
+        expires_at = now + timedelta(hours=1)
 
+        # STANDARDIZED SCHEMA - matches create_trial() and activate_subscription()
         subscription = {
-            "active": True,
-            "minutes_remaining": minutes,
-            "expires_at": expires_at.isoformat(),
-            "tier": "standard",
+            "phone_number": phone,
+            "subscription_status": "active",  # CONSISTENT: trial/active/expired/cancelled
+            "payment_method_id": payment_id,
+            "subscription_created": now.isoformat(),
+            "activated_at": now.isoformat(),
+            "minutes_used_in_trial": 0,  # Reset after payment
+            "hours_used_this_month": 0.0,
+            "last_call_date": now.isoformat(),
+            "total_calls": 0,
+            "pricing_plan": "per_hour",
+            "price_per_hour": self.price_per_hour,
+            # Additional fields for compatibility
             "stripe_payment_id": payment_id,
-            "created_at": datetime.utcnow().isoformat(),
             "total_minutes_purchased": minutes
         }
 
@@ -451,6 +462,8 @@ class SubscriptionManager:
 
         # Log purchase
         await self.log_purchase(phone, payment_id, minutes, 6.00)
+
+        logger.info(f"[{phone}] Created paid subscription with {minutes} minutes")
 
     async def log_call_start(self, phone: str, call_sid: str):
         """Log when call starts"""

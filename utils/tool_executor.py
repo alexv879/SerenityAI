@@ -193,15 +193,23 @@ class ToolExecutor:
                 "entertainment": "entertainment",
                 "sports": "sports"
             }
-            
+
             newsapi_category = category_map.get(category.lower(), "general")
-            
-            # Get UK top headlines
-            response = self.news_client.get_top_headlines(
-                country='gb',  # United Kingdom
-                category=newsapi_category,
-                page_size=min(max_headlines, 10)
-            )
+
+            # Get UK top headlines with timeout protection (5 seconds)
+            try:
+                response = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        self.news_client.get_top_headlines,
+                        country='gb',  # United Kingdom
+                        category=newsapi_category,
+                        page_size=min(max_headlines, 10)
+                    ),
+                    timeout=5.0
+                )
+            except asyncio.TimeoutError:
+                logger.error("NewsAPI request timed out")
+                return {"error": "News service is taking too long to respond", "headlines": []}
             
             if response['status'] != 'ok':
                 return {"error": "Failed to fetch news", "headlines": []}
@@ -256,53 +264,70 @@ class ToolExecutor:
         try:
             # Default to London if no postcode
             location = postcode if postcode else "London,GB"
-            
-            # Get forecast
-            if days == 1:
-                # Current weather
-                observation = self.weather_manager.weather_at_place(location)
-                weather = observation.weather
-                
-                return {
-                    "location": location,
-                    "current": {
-                        "temperature": weather.temperature('celsius')['temp'],
-                        "condition": weather.detailed_status,
-                        "humidity": weather.humidity,
-                        "wind_speed": weather.wind()['speed']
-                    },
-                    "forecast": []
-                }
-            else:
-                # Multi-day forecast
-                forecaster = self.weather_manager.forecast_at_place(location, '3h')
-                forecast = forecaster.forecast
-                
-                # Group by day (take midday forecast for each day)
-                daily_forecasts = []
-                current_date = None
-                
-                for weather in forecast.weathers[:days * 3]:  # Rough estimate
-                    weather_date = datetime.fromtimestamp(weather.reference_time())
-                    
-                    if current_date != weather_date.date():
-                        current_date = weather_date.date()
-                        
-                        daily_forecasts.append({
-                            "date": weather_date.strftime("%A, %d %B"),
+
+            # Get forecast with timeout protection (5 seconds)
+            try:
+                if days == 1:
+                    # Current weather
+                    observation = await asyncio.wait_for(
+                        asyncio.to_thread(
+                            self.weather_manager.weather_at_place,
+                            location
+                        ),
+                        timeout=5.0
+                    )
+                    weather = observation.weather
+
+                    return {
+                        "location": location,
+                        "current": {
                             "temperature": weather.temperature('celsius')['temp'],
                             "condition": weather.detailed_status,
-                            "humidity": weather.humidity
-                        })
-                        
-                        if len(daily_forecasts) >= days:
-                            break
-                
-                return {
-                    "location": location,
-                    "forecast": daily_forecasts,
-                    "fetched_at": datetime.utcnow().isoformat()
-                }
+                            "humidity": weather.humidity,
+                            "wind_speed": weather.wind()['speed']
+                        },
+                        "forecast": []
+                    }
+                else:
+                    # Multi-day forecast
+                    forecaster = await asyncio.wait_for(
+                        asyncio.to_thread(
+                            self.weather_manager.forecast_at_place,
+                            location,
+                            '3h'
+                        ),
+                        timeout=5.0
+                    )
+                    forecast = forecaster.forecast
+
+                    # Group by day (take midday forecast for each day)
+                    daily_forecasts = []
+                    current_date = None
+
+                    for weather in forecast.weathers[:days * 3]:  # Rough estimate
+                        weather_date = datetime.fromtimestamp(weather.reference_time())
+
+                        if current_date != weather_date.date():
+                            current_date = weather_date.date()
+
+                            daily_forecasts.append({
+                                "date": weather_date.strftime("%A, %d %B"),
+                                "temperature": weather.temperature('celsius')['temp'],
+                                "condition": weather.detailed_status,
+                                "humidity": weather.humidity
+                            })
+
+                            if len(daily_forecasts) >= days:
+                                break
+
+                    return {
+                        "location": location,
+                        "forecast": daily_forecasts,
+                        "fetched_at": datetime.utcnow().isoformat()
+                    }
+            except asyncio.TimeoutError:
+                logger.error("Weather API request timed out")
+                return {"error": "Weather service is taking too long to respond", "forecast": []}
                 
         except Exception as e:
             logger.error(f"Weather API error: {e}")

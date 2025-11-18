@@ -307,24 +307,50 @@ class OpenAIRealtimeClient:
     
     async def listen(self):
         """
-        Listen for events from OpenAI and trigger callbacks
+        Listen for events from OpenAI and trigger callbacks with automatic reconnection
         Run this in a background task: asyncio.create_task(client.listen())
+
+        Includes automatic reconnection with exponential backoff for network failures
         """
         if not self.connected or not self.ws:
             return
-        
-        try:
-            async for message in self.ws:
-                event = json.loads(message)
-                await self._handle_event(event)
-                
-        except websockets.exceptions.ConnectionClosed:
-            logger.warning("OpenAI Realtime connection closed")
-            self.connected = False
-            
-        except Exception as e:
-            logger.error(f"Error in OpenAI listener: {e}", exc_info=True)
-            self.connected = False
+
+        retry_count = 0
+        max_retries = 3
+
+        while retry_count < max_retries:
+            try:
+                async for message in self.ws:
+                    event = json.loads(message)
+                    await self._handle_event(event)
+                    retry_count = 0  # Reset on successful message processing
+
+            except websockets.exceptions.ConnectionClosed:
+                retry_count += 1
+                if retry_count < max_retries:
+                    backoff_delay = 2 ** retry_count  # Exponential backoff: 2s, 4s, 8s
+                    logger.warning(
+                        f"OpenAI Realtime connection closed, retrying {retry_count}/{max_retries} "
+                        f"in {backoff_delay}s..."
+                    )
+                    await asyncio.sleep(backoff_delay)
+
+                    # Attempt to reconnect
+                    reconnected = await self.connect()
+                    if reconnected:
+                        logger.info("Successfully reconnected to OpenAI Realtime API")
+                        continue  # Resume listening
+                    else:
+                        logger.error("Reconnection attempt failed")
+                else:
+                    logger.error("Max retries exceeded, giving up reconnection")
+                    self.connected = False
+                    break
+
+            except Exception as e:
+                logger.error(f"Error in OpenAI listener: {e}", exc_info=True)
+                self.connected = False
+                break
     
     async def _handle_event(self, event: Dict[str, Any]):
         """Handle incoming event from OpenAI"""

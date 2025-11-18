@@ -7,8 +7,11 @@ load_dotenv()
 # --- DEBUG: Print loaded env variables (only use for development) ---
 if os.getenv("ENV") == "development":  # Only print in development mode
     print("✅ CONFIG LOADED")
-    print("GOOGLE_APPLICATION_CREDENTIALS:", os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
-    print("GEMINI_API_KEY:", os.getenv("GEMINI_API_KEY"))
+    # Redact sensitive keys to prevent exposure in logs
+    google_creds = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    print("GOOGLE_APPLICATION_CREDENTIALS:", google_creds if not google_creds else "***REDACTED***")
+    print("GEMINI_API_KEY:", "***REDACTED***" if gemini_key else "Not set")
 
 # --- Central configuration class for global access ---
 class Config:
