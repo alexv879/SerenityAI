@@ -172,10 +172,7 @@ class ToolExecutor:
             
             elif function_name == "set_reminder":
                 return await self.set_reminder(**arguments)
-            
-            elif function_name == "book_appointment":
-                return await self.book_appointment(**arguments)
-            
+
             elif function_name == "recall_user_context":
                 return await self.recall_user_context(**arguments)
             
@@ -549,43 +546,6 @@ class ToolExecutor:
             "reminder_text": reminder_text,
             "scheduled_for": when,
             "note": "Reminder feature coming soon"
-        }
-    
-    async def book_appointment(
-        self,
-        service_type: str,
-        preferred_date: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """
-        Book appointment with GP/dentist/etc (requires integration)
-        
-        Args:
-            service_type: gp, dentist, optician, hospital
-            preferred_date: Preferred date (optional)
-            
-        Returns:
-            Booking confirmation or instructions
-        """
-        # TODO: Integrate with NHS appointment booking API
-        # For now, provide helpful instructions
-        
-        logger.info(f"Appointment booking requested: {service_type} on {preferred_date}")
-        
-        instructions = {
-            "gp": "To book a GP appointment, please call your GP surgery directly. You can find their number on your NHS card.",
-            "dentist": "To book a dentist appointment, call your dental practice. You can find their number on your previous appointment card.",
-            "optician": "To book an optician appointment, call your local opticians. Most high street opticians accept walk-ins as well.",
-            "hospital": "For hospital appointments, please call the number on your appointment letter, or contact 111 for urgent medical advice."
-        }
-        
-        instruction = instructions.get(service_type.lower(), "Please contact the relevant healthcare provider to book your appointment.")
-        
-        return {
-            "success": False,
-            "message": instruction,
-            "service_type": service_type,
-            "preferred_date": preferred_date,
-            "note": "Direct booking feature coming soon"
         }
     
     async def recall_user_context(

@@ -103,30 +103,6 @@ TOOL_DEFINITIONS = [
     },
     {
         "type": "function",
-        "name": "book_appointment",
-        "description": "Help user book a medical appointment (GP, dentist, optician). Collects details and schedules callback from service.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "service_type": {
-                    "type": "string",
-                    "enum": ["gp", "dentist", "optician", "hospital", "other"],
-                    "description": "Type of medical service"
-                },
-                "preferred_date": {
-                    "type": "string",
-                    "description": "Preferred appointment date (e.g., 'next week', 'Monday', 'tomorrow morning')"
-                },
-                "reason": {
-                    "type": "string",
-                    "description": "Reason for appointment (optional)"
-                }
-            },
-            "required": ["service_type"]
-        }
-    },
-    {
-        "type": "function",
         "name": "recall_user_context",
         "description": "Load previous conversation history and user preferences from memory. Use at the start of each call to personalize the interaction. Returns topics discussed, user preferences, and general context.",
         "parameters": {

@@ -9,7 +9,8 @@ from typing import Optional
 
 from utils.mcp_client import get_mcp_manager
 from mcp_servers.web_search_server import WebSearchMCPServer
-from mcp_servers.nhs_healthcare_server import NHSHealthcareMCPServer
+# NHS Healthcare MCP Server DISABLED - Entertainment only, no medical features
+# from mcp_servers.nhs_healthcare_server import NHSHealthcareMCPServer
 from mcp_servers.age_uk_services_server import AgeUKServicesMCPServer
 
 logger = logging.getLogger(__name__)
@@ -45,22 +46,12 @@ async def initialize_mcp_servers(
             
     except Exception as e:
         logger.error(f"❌ Web Search MCP Server error: {e}", exc_info=True)
-    
-    # 2. NHS Healthcare MCP Server
-    try:
-        logger.info("🏥 Initializing NHS Healthcare MCP Server...")
-        nhs_server = NHSHealthcareMCPServer()
-        
-        if await mcp_manager.register_server(nhs_server):
-            success_count += 1
-            logger.info("✅ NHS Healthcare MCP Server registered (4 tools)")
-        else:
-            logger.warning("⚠️  NHS Healthcare MCP Server failed to register")
-            
-    except Exception as e:
-        logger.error(f"❌ NHS Healthcare MCP Server error: {e}", exc_info=True)
-    
-    # 3. Age UK Services MCP Server
+
+    # NHS Healthcare MCP Server - DISABLED for entertainment-only focus
+    # No medical, NHS, GP, hospital, or medication features
+    logger.info("⚠️  NHS Healthcare MCP Server disabled (entertainment-only app)")
+
+    # 2. Age UK Services MCP Server (social/companionship only)
     try:
         logger.info("🤝 Initializing Age UK Services MCP Server...")
         age_uk_server = AgeUKServicesMCPServer()
@@ -70,15 +61,15 @@ async def initialize_mcp_servers(
             logger.info("✅ Age UK Services MCP Server registered (5 tools)")
         else:
             logger.warning("⚠️  Age UK Services MCP Server failed to register")
-            
+
     except Exception as e:
         logger.error(f"❌ Age UK Services MCP Server error: {e}", exc_info=True)
-    
+
     # Summary
     if success_count > 0:
         logger.info(
             f"🎉 MCP initialization complete! "
-            f"{success_count}/3 servers online, "
+            f"{success_count}/2 servers online, "
             f"{len(mcp_manager.tool_registry)} tools available"
         )
         
@@ -158,18 +149,12 @@ async def main():
     print("\n🔍 Testing web search...")
     result = await call_mcp_tool(
         "search_web_information",
-        {"query": "chiropodist in Middlesbrough", "result_count": 3}
+        {"query": "local cafes in Middlesbrough", "result_count": 3}
     )
     print(f"Found {result.get('result_count', 0)} results")
-    
-    # Test NHS services
-    print("\n🏥 Testing NHS services...")
-    result = await call_mcp_tool(
-        "find_nhs_services",
-        {"service_type": "pharmacy", "postcode": "TS1 2AQ"}
-    )
-    print(f"Found {result.get('count', 0)} pharmacies")
-    
+
+    # NHS services DISABLED - entertainment only
+
     # Test Age UK befriending
     print("\n🤝 Testing Age UK befriending...")
     result = await call_mcp_tool(

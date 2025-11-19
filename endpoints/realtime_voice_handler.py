@@ -15,6 +15,7 @@ from config.tool_definitions import TOOL_DEFINITIONS
 from utils.openai_realtime_client import OpenAIRealtimeClient
 from utils.tool_executor import ToolExecutor
 from utils.audio_transcoding import mulaw_to_pcm16_24khz, pcm16_24khz_to_mulaw
+from utils.elderly_conversation_optimizer import get_elderly_optimizer
 from utils.mcp_initialization import (
     initialize_mcp_servers,
     get_mcp_tools_for_openai,
@@ -82,11 +83,15 @@ class RealtimeSession:
         self.call_sid = call_sid
         self.stream_sid = stream_sid
         self.started = False
-        
-        # Initialize OpenAI Realtime client with elderly-optimized settings
+
+        # Initialize elderly conversation optimizer with custom settings
+        # Optimizes for: longer pauses, UK accents, background noise, repetition tolerance
+        self.elderly_optimizer = get_elderly_optimizer()
+        elderly_config = self.elderly_optimizer.get_session_config()
+
         # Combine built-in tools with MCP tools
         all_tools = TOOL_DEFINITIONS.copy()
-        
+
         # Add MCP tools if initialized
         global _mcp_initialized
         if _mcp_initialized:
@@ -95,15 +100,24 @@ class RealtimeSession:
             logger.info(f"Loaded {len(mcp_tools)} MCP tools + {len(TOOL_DEFINITIONS)} built-in tools")
         else:
             logger.info(f"Using {len(TOOL_DEFINITIONS)} built-in tools (MCP not initialized)")
-        
+
+        # Initialize OpenAI Realtime client with elderly-optimized settings
         self.openai_client = OpenAIRealtimeClient(
             api_key=openai_api_key,
             model="gpt-4o-realtime-preview",  # Full model for best quality
-            voice="alloy",  # Clear, neutral voice
-            instructions=ELDERLY_COMPANION_PROMPT,
+            voice=elderly_config.get("voice", "alloy"),  # Warm, clear voice for elderly
+            instructions=elderly_config.get("instructions"),  # Elderly-optimized system prompt
             tools=all_tools,  # Built-in + MCP tools
-            max_response_tokens=150,  # Concise responses (saves 20-30% on costs!)
+            turn_detection=elderly_config.get("turn_detection"),  # Longer pauses (1.2s) for elderly speech
+            max_response_tokens=elderly_config.get("max_response_output_tokens", 200),  # Concise responses
             enable_noise_reduction=True  # Filter TV/background noise
+        )
+
+        logger.info(
+            f"🎯 Elderly-optimized session initialized: "
+            f"pause_tolerance={elderly_config.get('turn_detection', {}).get('silence_duration_ms')}ms, "
+            f"voice={elderly_config.get('voice')}, "
+            f"max_tokens={elderly_config.get('max_response_output_tokens')}"
         )
         
         # Initialize tool executor
