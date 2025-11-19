@@ -10,6 +10,7 @@ from datetime import datetime
 
 from utils.groq_client import get_groq_client
 from utils.subscription_manager import get_subscription_manager
+from utils.conversation_history import get_conversation_history
 from utils.logging import log_message
 
 router = APIRouter()
@@ -71,24 +72,45 @@ async def handle_conversation(request: Request) -> Response:
     
     # Log user input
     log_message("info", f"[{phone}] User: {user_speech[:50]}...")
-    
-    # Get conversation history from Redis (if exists)
-    # For MVP, we'll keep it stateless and just use current turn
-    # TODO: Store conversation_history in Redis for context
-    
+
+    # Get conversation history from Redis for context continuity
+    conversation_context = None
+    try:
+        history_mgr = await get_conversation_history()
+        recent_turns = await history_mgr.get_recent_turns(phone, limit=10)
+        if recent_turns:
+            # Format for AI context
+            conversation_context = await history_mgr.get_formatted_context(phone, limit=10)
+            log_message("info", f"[{phone}] Loaded {len(recent_turns)} previous turns from history")
+    except Exception as e:
+        log_message("warning", f"[{phone}] Failed to load conversation history: {e}")
+        conversation_context = None
+
     # Generate AI response
     try:
         groq_client = await get_groq_client()
         ai_response = await groq_client.generate_response(
             user_input=user_speech,
-            conversation_history=None  # TODO: Load from Redis
+            conversation_history=conversation_context
         )
-        
+
         log_message("info", f"[{phone}] AI: {ai_response[:50]}...")
-        
+
+    except (ConnectionError, TimeoutError) as e:
+        log_message("error", f"[{phone}] AI API connection failed: {e}")
+        ai_response = "I'm having trouble connecting. Could you try again in a moment, love?"
     except Exception as e:
-        log_message("error", f"[{phone}] AI generation failed: {e}")
+        log_message("error", f"[{phone}] AI generation failed: {e}", exc_info=True)
         ai_response = "I'm having a spot of trouble. Could you say that again, love?"
+
+    # Store this conversation turn in history for context continuity
+    try:
+        history_mgr = await get_conversation_history()
+        await history_mgr.add_turn(phone, "user", user_speech)
+        await history_mgr.add_turn(phone, "assistant", ai_response)
+        log_message("debug", f"[{phone}] Conversation turn saved to history")
+    except Exception as e:
+        log_message("warning", f"[{phone}] Failed to save conversation history: {e}")
     
     # Update trial usage (rough estimate: 0.5 min per turn)
     # TODO: Track actual call duration via status callback

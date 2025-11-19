@@ -526,27 +526,54 @@ class ToolExecutor:
         when: str
     ) -> Dict[str, Any]:
         """
-        Set a reminder for the user (requires Redis + scheduler)
-        
+        Set a reminder for the user (calls them back at specified time)
+
         Args:
             reminder_text: What to remind
             when: When to remind (e.g., "in 1 hour", "tomorrow at 2pm")
-            
+
         Returns:
             Confirmation message
         """
-        # TODO: Implement reminder scheduling with Redis + Twilio outbound calls
-        # For now, return placeholder
-        
-        logger.info(f"Reminder requested: '{reminder_text}' at {when}")
-        
-        return {
-            "success": True,
-            "message": f"I'll remind you about '{reminder_text}' {when}",
-            "reminder_text": reminder_text,
-            "scheduled_for": when,
-            "note": "Reminder feature coming soon"
-        }
+        try:
+            from utils.reminder_scheduler import get_reminder_scheduler
+
+            # Get phone number from context (should be set during call)
+            user_id = getattr(self, 'current_phone_number', None)
+
+            if not user_id:
+                logger.warning("Reminder requested without phone number context")
+                return {
+                    "success": False,
+                    "message": "I need your phone number to set reminders. This should be configured automatically."
+                }
+
+            scheduler = await get_reminder_scheduler()
+            result = await scheduler.create_reminder(
+                phone_number=user_id,
+                reminder_text=reminder_text,
+                when=when
+            )
+
+            logger.info(
+                f"Reminder for {user_id}: '{reminder_text}' {when} "
+                f"- Success: {result.get('success')}"
+            )
+
+            return result
+
+        except ImportError as e:
+            logger.error(f"Reminder scheduler not available: {e}")
+            return {
+                "success": False,
+                "message": "I'm having trouble setting reminders right now. Please try again later."
+            }
+        except Exception as e:
+            logger.error(f"Failed to set reminder: {e}", exc_info=True)
+            return {
+                "success": False,
+                "message": "I had trouble setting that reminder. Could you try again?"
+            }
     
     async def recall_user_context(
         self,

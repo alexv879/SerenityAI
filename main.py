@@ -1,4 +1,5 @@
 import os
+import logging
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -19,12 +20,25 @@ from endpoints.conversation_handler import router as conversation_router
 from endpoints.realtime_voice_handler import router as realtime_voice_router  # OpenAI Realtime WebSocket
 from endpoints.health import router as health_router  # Health check and metrics endpoints
 
-# Optional/absent modules are guarded to avoid startup failures
-try:
-    from utils.rate_limiter import rate_limit_middleware  # type: ignore
-except Exception:  # Module may be missing; use no-op
-    async def rate_limit_middleware(app: FastAPI):
-        return None
+# CRITICAL: Rate limiting is REQUIRED in production to prevent DoS attacks
+# In development, we allow it to fail gracefully
+if os.getenv("ENV") == "production":
+    # Production: FAIL FAST if rate limiter missing (security critical)
+    from utils.rate_limiter import rate_limit_middleware
+    logger = logging.getLogger(__name__)
+    logger.info("🔒 Production mode: Rate limiting ENFORCED")
+else:
+    # Development: Allow graceful degradation
+    try:
+        from utils.rate_limiter import rate_limit_middleware  # type: ignore
+        logger = logging.getLogger(__name__)
+        logger.info("🔓 Development mode: Rate limiting enabled")
+    except ImportError as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"⚠️  Rate limiter not available in development: {e}")
+        async def rate_limit_middleware(app: FastAPI):
+            return None
 
 from utils.logging import log_message
 
@@ -35,49 +49,62 @@ async def lifespan(app: FastAPI):
 
     # Initialize conversation logger (PostgreSQL)
     try:
-        # Delay import to avoid early Config validation during module import
         from utils.conversation_logger import get_conversation_logger
         conversation_logger = await get_conversation_logger()
-        log_message("info", "Conversation logger initialized")
+        log_message("info", "✅ Conversation logger initialized")
+    except (ConnectionError, TimeoutError, OSError) as e:
+        log_message("error", f"❌ PostgreSQL connection failed: {e}")
+        if os.getenv("ENV") == "production":
+            raise RuntimeError("CRITICAL: PostgreSQL required in production") from e
     except Exception as e:
-        log_message("error", f"Failed to initialize conversation logger: {e}")
+        log_message("error", f"❌ Failed to initialize conversation logger: {e}", exc_info=True)
+        if os.getenv("ENV") == "production":
+            raise
 
     yield
 
-    # Perform shutdown tasks
+    # Perform shutdown tasks (graceful cleanup)
     try:
         from utils.conversation_logger import get_conversation_logger
         conversation_logger = await get_conversation_logger()
         await conversation_logger.close()
-        log_message("info", "Conversation logger closed")
-    except Exception:
-        pass
-    
+        log_message("info", "✅ Conversation logger closed")
+    except (AttributeError, RuntimeError) as e:
+        log_message("warning", f"Conversation logger already closed: {e}")
+    except Exception as e:
+        log_message("error", f"Error closing conversation logger: {e}", exc_info=True)
+
     # Close Redis connection
     try:
         from utils.subscription_manager import get_subscription_manager
         sub_mgr = await get_subscription_manager()
         await sub_mgr.close()
-        log_message("info", "Subscription manager closed")
-    except Exception:
-        pass
+        log_message("info", "✅ Subscription manager closed")
+    except (ConnectionError, AttributeError) as e:
+        log_message("warning", f"Subscription manager already closed: {e}")
+    except Exception as e:
+        log_message("error", f"Error closing subscription manager: {e}", exc_info=True)
 
     # Close Groq client HTTP connections
     try:
         from utils.groq_client import get_groq_client
         groq_client = await get_groq_client()
         await groq_client.close()
-        log_message("info", "Groq client closed")
-    except Exception:
-        pass
+        log_message("info", "✅ Groq client closed")
+    except (AttributeError, RuntimeError) as e:
+        log_message("warning", f"Groq client already closed: {e}")
+    except Exception as e:
+        log_message("error", f"Error closing Groq client: {e}", exc_info=True)
 
     # Shutdown MCP servers
     try:
         from utils.mcp_initialization import shutdown_mcp_servers
         await shutdown_mcp_servers()
-        log_message("info", "MCP servers shut down")
+        log_message("info", "✅ MCP servers shut down")
+    except (AttributeError, RuntimeError) as e:
+        log_message("warning", f"MCP servers already shut down: {e}")
     except Exception as e:
-        log_message("error", f"MCP shutdown error: {e}")
+        log_message("error", f"❌ MCP shutdown error: {e}", exc_info=True)
 
 app = FastAPI(lifespan=lifespan)
 
