@@ -21,6 +21,16 @@ except ImportError:
             return func
         return decorator
 
+# Import retry handler
+try:
+    from utils.retry_handler import retry_groq_api
+    RETRY_HANDLER_AVAILABLE = True
+except ImportError:
+    RETRY_HANDLER_AVAILABLE = False
+    # No-op decorator if retry handler not available
+    def retry_groq_api(func):
+        return func
+
 logger = logging.getLogger(__name__)
 
 
@@ -58,6 +68,7 @@ class GroqClient:
             }
         )
     
+    @retry_groq_api
     @circuit_breaker(name="groq", failure_threshold=5, recovery_timeout=60, timeout=10)
     async def generate_response(
         self,
@@ -68,6 +79,7 @@ class GroqClient:
         """
         Generate AI response for user input
 
+        **Retry logic:** 3 attempts with exponential backoff (1-10s)
         **Circuit breaker** opens after 5 failures, recovers after 60s
 
         Args:

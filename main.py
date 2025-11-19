@@ -19,6 +19,8 @@ from endpoints.stripe_webhook import router as stripe_webhook_router
 from endpoints.conversation_handler import router as conversation_router
 from endpoints.realtime_voice_handler import router as realtime_voice_router  # OpenAI Realtime WebSocket
 from endpoints.health import router as health_router  # Health check and metrics endpoints
+from endpoints.call_tracking import router as call_tracking_router  # Call duration tracking and Twilio callbacks
+from endpoints.gdpr_compliance import router as gdpr_router  # GDPR data deletion and export
 
 # CRITICAL: Rate limiting is REQUIRED in production to prevent DoS attacks
 # In development, we allow it to fail gracefully
@@ -108,6 +110,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# Add security headers middleware
+try:
+    from utils.security_headers import add_security_middleware
+    add_security_middleware(app, enable_hsts=True, enable_csp=True)
+    log_message("info", "🔒 Security headers middleware enabled")
+except ImportError as e:
+    log_message("warning", f"⚠️  Security headers middleware not available: {e}")
+
 # Include only routers that exist in this repo to ensure app starts
 app.include_router(voice_entry_router)  # /voice/entry, /voice/route, /prefs/voice
 app.include_router(conversation_router) # /voice/chat, /twilio/status-callback
@@ -116,6 +126,8 @@ app.include_router(payment_router)      # /payment/*
 app.include_router(news_weather_router) # /news, /weather
 app.include_router(stripe_webhook_router) # /stripe/webhook
 app.include_router(health_router)       # /health, /health/detailed, /health/ready, /health/live, /metrics
+app.include_router(call_tracking_router) # /twilio/status-callback, /twilio/recording-callback
+app.include_router(gdpr_router)          # /gdpr/delete-my-data, /gdpr/export-my-data
 
 @app.get("/")
 def root():

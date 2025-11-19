@@ -133,6 +133,28 @@ class ConversationLogger:
                 ON conversation_turns(conversation_id)
             """)
 
+            # GDPR audit log table for compliance
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS gdpr_audit_log (
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    phone_number VARCHAR(20) NOT NULL,
+                    action_type VARCHAR(50) NOT NULL,
+                    call_sid VARCHAR(100),
+                    action_metadata JSONB,
+                    created_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
+
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_gdpr_audit_log_phone_number
+                ON gdpr_audit_log(phone_number)
+            """)
+
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_gdpr_audit_log_created_at
+                ON gdpr_audit_log(created_at)
+            """)
+
             logger.info("Database tables created successfully")
 
     @staticmethod

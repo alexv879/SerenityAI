@@ -59,6 +59,9 @@ langcodes==3.3.0
 # === Date/Time Parsing ===
 python-dateutil==2.8.2  # Required for natural language time parsing in reminders
 
+# === Retry Logic ===
+tenacity==8.2.3  # Retry with exponential backoff for external API calls
+
 # === Testing ===
 pytest==7.4.0
 
